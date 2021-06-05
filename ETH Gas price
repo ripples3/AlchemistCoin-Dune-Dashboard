@@ -1,0 +1,9 @@
+SELECT date_trunc('day', block_time) as time,
+       --avg(gas_price) / 10^9 AS avg_gas_price,
+       min(gas_price) / 10^9 AS min_gas_price,
+       --max(gas_price) / 10^9 AS max_gas_price
+       (PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY gas_price)) / 10^9 AS median_gas_price
+FROM ethereum.transactions
+WHERE block_time > '2021-02-10 00:00'
+GROUP BY 1
+ORDER BY 1 DESC
