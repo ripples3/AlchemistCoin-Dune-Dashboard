@@ -1,0 +1,54 @@
+
+with 
+
+swap AS ( -- Get all trades on the pair last 14 days
+    SELECT
+        (sw."amount1In" + sw."amount1Out")/1e18 AS eth_amt, 
+        (sw."amount0In" + sw."amount0Out")/1e18 AS mist_amt, 
+        'MIST' symbol,
+        sw."contract_address",
+        date_trunc('hour', sw."evt_block_time") AS hour
+    FROM uniswap_v2."Pair_evt_Swap" sw
+    WHERE sw."contract_address" = '\xcd6bcca48069f8588780dfa274960f15685aee0e'
+    AND sw.evt_block_time >= now() - interval '1 day'
+    ),
+    
+eth_prcs AS (
+    SELECT avg(price) eth_prc, date_trunc('hour', minute) AS hour
+    FROM prices.layer1_usd_eth
+    WHERE minute >= now() - interval '1 day'
+    group by 2
+    )
+ 
+/*total as (   
+    Select 
+    ("supplyMinted"/1e16) as mist,
+    date_trunc('hour', evt_block_time) AS hour
+    From alchemist."Alchemist_evt_Advanced"
+    where "evt_block_time" <= now() - interval '1 day'
+
+   ) 
+   
+   */
+/*prices AS (
+        SELECT date_trunc('day', minute) AS day, 
+        contract_address, AVG(price) AS price
+        FROM prices.usd
+        WHERE contract_address = '\xba100000625a3754423978a60c9317c58a424e3d' 
+        GROUP BY 1, 2
+*/        
+SELECT
+    AVG((eth_amt/mist_amt)*eth_prc*1072135) AS market_cap,
+    AVG(eth_amt/mist_amt) AS eth_price,
+    AVG((eth_amt/mist_amt)*eth_prc) AS usd_price,
+    swap."symbol" AS symbol,
+    swap."contract_address" AS contract_address,
+    eth_prcs."hour" AS hour
+FROM swap 
+JOIN eth_prcs 
+ON swap."hour" = eth_prcs."hour"
+
+GROUP BY 4,5,6
+ORDER BY 6 DESC
+LIMIT 10
+
