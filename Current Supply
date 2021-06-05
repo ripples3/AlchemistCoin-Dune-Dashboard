@@ -1,0 +1,16 @@
+WITH total AS
+  (SELECT DAY,
+          SUM(transfer) OVER (ORDER BY DAY) total_supply
+   FROM (
+         SELECT date_trunc('day', evt_block_time) AS DAY,
+         sum(round(value/1000000000000000000)) AS transfer
+         FROM erc20."ERC20_evt_Transfer"
+         WHERE contract_address = '\x88acdd2a6425c3faae4bc9650fd7e27e0bebb7ab' -- MIST contract address
+         AND "from" = '\x0000000000000000000000000000000000000000'
+    GROUP BY 1
+      
+      ) AS net  )
+      
+      SELECT * FROM total
+      ORDER BY 1 DESC
+      
