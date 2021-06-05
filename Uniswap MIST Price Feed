@@ -1,0 +1,27 @@
+
+         with swap AS ( -- Get all trades on the pair last 14 days
+                SELECT
+                    date_trunc('minute', sw."evt_block_time") AS minute,
+                    ("amount0In" + "amount0Out")/1e18 AS a0_amt, 
+                    ("amount1In" + "amount1Out")/1e18 AS a1_amt
+                    
+                FROM uniswap_v2."Pair_evt_Swap" sw
+                WHERE contract_address = '\xcd6bcca48069f8588780dfa274960f15685aee0e' -- liq pair address I am searching the price for
+                AND sw.evt_block_time >= '2020-10-01'
+                )
+
+            , a1_prcs AS (
+                SELECT avg(price) a1_prc, date_trunc('minute', minute) AS minute
+                FROM prices.usd
+                WHERE minute >= '2020-10-01'
+                and contract_address ='\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' --weth as base asset
+                group by 2
+                )
+
+            SELECT
+                AVG((a1_amt/a0_amt)*a1_prc) AS usd_price, AVG(a1_amt/a0_amt) as eth_price,
+                a1_prcs."minute" AS minute
+            FROM swap JOIN a1_prcs ON swap."minute" = a1_prcs."minute"
+            GROUP BY 3
+
+--eth/dpi uni        x4d5ef58aac27d99935e5b6b4a6778ff292059991
