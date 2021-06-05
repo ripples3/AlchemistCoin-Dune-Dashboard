@@ -1,0 +1,11 @@
+WITH base AS (
+SELECT *
+FROM erc721."ERC721_evt_Transfer" t
+WHERE t.contract_address = '\x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56' and 
+    "from" = '\x0000000000000000000000000000000000000000'
+)
+
+
+SELECT COUNT("tokenId") AS "Current Supply"
+FROM base
+
